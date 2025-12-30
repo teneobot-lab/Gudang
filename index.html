@@ -1,1077 +1,969 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <base target="_top">
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Blue Steel Enterprise WMS</title>
-  
-  <!-- Icons & Fonts -->
-  <script src="https://unpkg.com/@phosphor-icons/web"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web to Warehouse | Ultimate Fix</title>
+    <style>
+        /* --- VARIABLES --- */
+        :root {
+            --bg-deep: #020617;
+            --bg-glass: rgba(15, 23, 42, 0.7); 
+            --bg-input: rgba(255, 255, 255, 0.05); 
+            --primary: #38bdf8;
+            --primary-grad: linear-gradient(135deg, #38bdf8 0%, #2563eb 100%);
+            --border: rgba(255, 255, 255, 0.08);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --font: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            --radius: 12px;
+        }
 
-  <style>
-    /* --- CORE VARIABLES --- */
-    :root {
-      --bg-dark: #020617;       /* Very Dark Blue */
-      --bg-accent: #0f172a;     /* Slate 900 */
-      --primary: #38bdf8;       /* Sky 400 (Cyan-ish Blue) */
-      --primary-glow: rgba(56, 189, 248, 0.4);
-      --text-main: #f1f5f9;
-      --text-muted: #94a3b8;
-      --glass: rgba(15, 23, 42, 0.6);
-      --border: rgba(56, 189, 248, 0.2);
-    }
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+        
+        body {
+            font-family: var(--font);
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
 
-    * { box-sizing: border-box; outline: none; }
-    
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: 'Inter', sans-serif;
-      background-color: var(--bg-dark);
-      color: var(--text-main);
-      height: 100vh;
-      overflow: hidden;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background-image: radial-gradient(circle at 50% 50%, #1e293b 0%, #020617 100%);
-    }
+        /* --- BACKGROUND --- */
+        .scene {
+            position: fixed; top:0; left:0; width:100%; height:100%; z-index:0;
+            background: radial-gradient(circle at 50% 50%, #1e293b 0%, #020617 100%);
+            overflow: hidden;
+        }
+        .cube {
+            position: absolute; border: 1px solid rgba(56, 189, 248, 0.15);
+            background: rgba(56, 189, 248, 0.03); backdrop-filter: blur(2px);
+            border-radius: 8px; 
+            animation: float 25s infinite linear;
+        }
+        @keyframes float { 0%{transform:translateY(100vh) rotate(0deg)} 100%{transform:translateY(-20vh) rotate(360deg)} }
 
-    /* --- 3D CUBE ANIMATION --- */
-    .scene {
-      width: 200px;
-      height: 200px;
-      perspective: 600px;
-      position: absolute;
-      z-index: 1; /* Behind the login shield */
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-    }
+        /* --- UI COMPONENTS --- */
+        .glass {
+            background: var(--bg-glass); backdrop-filter: blur(16px);
+            border: 1px solid var(--border); border-radius: var(--radius);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
 
-    .cube {
-      width: 100%;
-      height: 100%;
-      position: relative;
-      transform-style: preserve-3d;
-      animation: rotateCube 10s infinite linear;
-    }
+        .btn {
+            background: var(--primary-grad); color: white; border: none;
+            padding: 8px 16px; border-radius: 8px; cursor: pointer;
+            font-size: 0.85rem; font-weight: 600; transition: 0.2s;
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        .btn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(37, 99, 235, 0.3); }
+        .btn:disabled { filter: grayscale(1); cursor: not-allowed; opacity: 0.5; }
+        .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
+        .btn-ghost:hover { border-color: var(--primary); color: var(--text-main); background: rgba(56, 189, 248, 0.1); }
+        .btn-danger { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
+        .btn-danger:hover { background: rgba(239, 68, 68, 0.3); }
+        .btn-sm { padding: 4px 10px; font-size: 0.75rem; border-radius: 6px; }
 
-    .cube__face {
-      position: absolute;
-      width: 200px;
-      height: 200px;
-      border: 2px solid var(--primary);
-      background: rgba(56, 189, 248, 0.05); /* Transparent */
-      box-shadow: 0 0 20px var(--primary-glow);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 40px;
-      color: var(--primary);
-    }
+        input, select, textarea {
+            background: var(--bg-input); border: 1px solid var(--border);
+            color: var(--text-main); padding: 8px 12px;
+            border-radius: 8px; font-family: var(--font); font-size: 0.9rem;
+            width: 100%; transition: 0.2s;
+        }
+        input:focus, select:focus { border-color: var(--primary); background: rgba(255,255,255,0.08); }
+        input[readonly] { background: rgba(255,255,255,0.02); cursor: default; opacity: 0.7; }
+        
+        /* --- LAYOUT --- */
+        .app { display: flex; flex-direction: column; height: 100%; position: relative; z-index: 10; }
+        
+        nav {
+            padding: 0 2rem; height: 70px; display: flex; align-items: center; justify-content: space-between;
+            background: rgba(2, 6, 23, 0.95); border-bottom: 1px solid var(--border);
+        }
+        .brand { font-weight: 700; letter-spacing: 1px; display: flex; align-items: center; gap: 10px; font-size: 1.1rem;}
+        .brand svg { color: var(--primary); }
 
-    .cube__face--front  { transform: rotateY(  0deg) translateZ(100px); }
-    .cube__face--right  { transform: rotateY( 90deg) translateZ(100px); }
-    .cube__face--back   { transform: rotateY(180deg) translateZ(100px); }
-    .cube__face--left   { transform: rotateY(-90deg) translateZ(100px); }
-    .cube__face--top    { transform: rotateX( 90deg) translateZ(100px); }
-    .cube__face--bottom { transform: rotateX(-90deg) translateZ(100px); }
+        .tabs { display: flex; gap: 8px; background: rgba(0,0,0,0.2); padding: 4px; border-radius: 12px; }
+        .tab {
+            padding: 8px 20px; border-radius: 10px; cursor: pointer; font-size: 0.85rem;
+            color: var(--text-muted); transition: 0.3s; font-weight: 500;
+        }
+        .tab:hover { color: var(--text-main); background: rgba(255,255,255,0.05); }
+        .tab.active { background: var(--primary-grad); color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
 
-    @keyframes rotateCube {
-      0% { transform: rotateX(0deg) rotateY(0deg); }
-      100% { transform: rotateX(360deg) rotateY(360deg); }
-    }
+        main { flex: 1; padding: 2rem; overflow-y: auto; }
+        .section-title { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 300; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        .hidden { display: none !important; }
 
-    /* --- LOGIN SHIELD CONTAINER --- */
-    #login-wrapper {
-      position: relative;
-      z-index: 10; /* Above cube */
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
+        /* Tables */
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th { background: transparent; color: var(--text-muted); text-align: left; padding: 12px 10px; font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
+        td { padding: 12px 10px; border-bottom: 1px solid var(--border); color: var(--text-main); }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(255,255,255,0.03); }
 
-    .login-shield {
-      width: 420px;
-      padding: 50px 30px 30px 30px; /* Extra padding top */
-      position: relative;
-      /* Glassmorphism */
-      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.9));
-      backdrop-filter: blur(15px);
-      -webkit-backdrop-filter: blur(15px);
-      border: 1px solid var(--border);
-      border-top: 2px solid var(--primary);
-      
-      /* THE SHIELD SHAPE CLIP-PATH */
-      clip-path: polygon(
-        10% 0, 
-        90% 0, 
-        100% 15%, 
-        100% 80%, 
-        50% 100%, 
-        0 80%, 
-        0 15%
-      );
-      
-      box-shadow: 0 0 50px rgba(0,0,0,0.5);
-      transition: transform 0.3s ease;
-    }
+        /* Form Grids */
+        .f-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        .f-label { display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        /* Autocomplete */
+        .ac-wrap { position: relative; }
+        .ac-list {
+            position: absolute; top: 100%; left: 0; right: 0; z-index: 50;
+            background: rgba(15, 23, 42, 0.98); backdrop-filter: blur(10px); border-radius: 12px;
+            border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            max-height: 200px; overflow-y: auto; display: none; margin-top: 5px;
+        }
+        .ac-list div { padding: 10px 12px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.02); }
+        .ac-list div:hover { background: var(--primary-grad); color: white; }
+        .ac-list div:last-child { border-bottom: none; border-radius: 0 0 12px 12px; }
 
-    .login-shield:hover {
-      transform: scale(1.02);
-      box-shadow: 0 0 60px var(--primary-glow);
-    }
+        /* Stock Info */
+        .st-info { font-size: 0.8rem; margin-top: 8px; padding: 8px; border-radius: 8px; background: rgba(255,255,255,0.03); }
+        .st-info.good { color: var(--success); background: rgba(16, 185, 129, 0.1); }
+        .st-info.bad { color: var(--danger); background: rgba(239, 68, 68, 0.1); }
 
-    .login-header {
-      text-align: center;
-      margin-bottom: 30px;
-    }
+        /* Unit Tag */
+        .unit-tag { 
+            display: inline-flex; align-items: center; background: rgba(56, 189, 248, 0.1); 
+            padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; margin-right: 6px; margin-bottom: 6px; 
+            border: 1px solid rgba(56,189,248,0.2); color: var(--primary);
+        }
 
-    .login-logo {
-      font-size: 3rem;
-      color: var(--primary);
-      margin-bottom: 10px;
-      filter: drop-shadow(0 0 10px var(--primary));
-    }
-
-    .login-title {
-      font-size: 1.5rem;
-      font-weight: 700;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      margin: 0;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.5);
-    }
-
-    .login-subtitle {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      margin-top: 5px;
-    }
-
-    /* --- FORM ELEMENTS --- */
-    .input-group { margin-bottom: 20px; position: relative; }
-    
-    .input-group label {
-      display: block;
-      font-size: 0.75rem;
-      color: var(--primary);
-      margin-bottom: 5px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    input, select {
-      width: 100%;
-      background: rgba(2, 6, 23, 0.6);
-      border: 1px solid var(--border);
-      color: var(--text-main);
-      padding: 12px 15px;
-      border-radius: 4px;
-      font-family: 'Inter', sans-serif;
-      font-size: 0.95rem;
-      transition: all 0.3s;
-    }
-
-    input:focus, select:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
-      background: rgba(2, 6, 23, 0.8);
-    }
-
-    /* --- BUTTONS --- */
-    .btn {
-      width: 100%;
-      background: linear-gradient(90deg, #0ea5e9, #2563eb);
-      color: white;
-      padding: 14px;
-      border: none;
-      border-radius: 4px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      cursor: pointer;
-      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
-      transition: all 0.3s;
-      position: relative;
-      overflow: hidden;
-      clip-path: polygon(5% 0, 95% 0, 100% 50%, 95% 100%, 5% 100%, 0 50%); /* Button shape */
-    }
-
-    .btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.6);
-      filter: brightness(1.1);
-    }
-
-    .btn:active { transform: translateY(1px); }
-
-    /* --- MAIN APP LAYOUT (Hidden at start) --- */
-    #app-layout { display: flex; height: 100%; width: 100%; position: absolute; top: 0; left: 0; background: var(--bg-dark); }
-    
-    aside {
-      width: 260px;
-      background: var(--bg-accent);
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      padding: 1.5rem;
-      z-index: 50;
-    }
-
-    aside .brand { margin-bottom: 2rem; color: var(--primary); font-weight: 700; font-size: 1.2rem; display:flex; align-items:center; gap:10px; }
-
-    .nav-link {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px;
-      color: var(--text-muted);
-      text-decoration: none;
-      border-radius: 6px;
-      margin-bottom: 4px;
-      font-weight: 500;
-      transition: all 0.2s;
-    }
-
-    .nav-link:hover { background: rgba(255,255,255,0.05); color: var(--text-main); }
-    .nav-link.active { background: var(--primary); color: white; box-shadow: 0 0 15px var(--primary-glow); }
-    .nav-link i { font-size: 1.2rem; }
-
-    .user-profile {
-      margin-top: auto;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    main {
-      flex: 1;
-      overflow-y: auto;
-      padding: 2rem;
-      background: radial-gradient(circle at top right, #1e293b 0%, #020617 100%);
-    }
-
-    /* --- PAGES & UTILS --- */
-    .hidden { display: none !important; }
-    .page { display: none; animation: fadeIn 0.4s ease-out; }
-    .page.active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-    .card {
-      background: var(--bg-accent);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 24px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-      margin-bottom: 20px;
-    }
-
-    .form-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 1.5rem;
-    }
-
-    /* Tables */
-    .table-container { width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: 6px; margin-top: 1rem; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-    th { background: rgba(56, 189, 248, 0.1); text-align: left; padding: 12px 16px; font-weight: 600; color: var(--primary); border-bottom: 1px solid var(--border); }
-    td { padding: 12px 16px; border-bottom: 1px solid var(--border); color: var(--text-muted); }
-    tr:hover td { background: rgba(255,255,255,0.02); color: #fff; }
-
-    .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
-    .badge-in { background: rgba(16, 185, 129, 0.2); color: #10b981; }
-    .badge-out { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
-    .badge-low { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
-
-    /* Buttons Styles for App */
-    .btn-sm { padding: 5px 10px; font-size: 0.8rem; width: auto; }
-    .btn-danger { background: linear-gradient(90deg, #ef4444, #b91c1c); box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); }
-    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-muted); box-shadow: none; }
-    .btn-outline:hover { border-color: var(--text-main); color: var(--text-main); }
-
-    /* Toast */
-    #toast { position: fixed; bottom: 24px; right: 24px; background: var(--bg-accent); border-left: 4px solid var(--primary); padding: 16px 24px; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); transform: translateY(100px); transition: transform 0.3s; z-index: 1000; }
-    #toast.show { transform: translateY(0); }
-    #toast.error { border-left-color: var(--danger); }
-    
-    /* Mobile */
-    @media (max-width: 768px) {
-      .scene { width: 150px; height: 150px; }
-      .cube__face { width: 150px; height: 150px; }
-      .cube__face--front  { transform: rotateY(  0deg) translateZ(75px); }
-      .cube__face--right  { transform: rotateY( 90deg) translateZ(75px); }
-      .cube__face--back   { transform: rotateY(180deg) translateZ(75px); }
-      .cube__face--left   { transform: rotateY(-90deg) translateZ(75px); }
-      .cube__face--top    { transform: rotateX( 90deg) translateZ(75px); }
-      .cube__face--bottom { transform: rotateX(-90deg) translateZ(75px); }
-      
-      .login-shield { width: 90%; padding: 40px 20px; }
-      #app-layout { flex-direction: column; }
-      aside { width: 100%; height: auto; padding: 1rem; border-right: none; border-bottom: 1px solid var(--border); overflow-x: auto; flex-direction: row; align-items: center; gap: 1rem; }
-      aside .brand { display: none; }
-      .user-profile { display: none; }
-    }
-  </style>
+        /* Toast */
+        #toast-box { position: fixed; top: 20px; right: 20px; z-index: 100; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        .toast {
+            background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); border-left: 4px solid var(--primary); color: white;
+            padding: 12px 20px; border-radius: 8px; box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            animation: slideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); font-size: 0.9rem; pointer-events: auto;
+        }
+        @keyframes slideIn { from{transform:translateX(100%); opacity:0;} to{transform:translateX(0); opacity:1;} }
+    </style>
 </head>
 <body>
 
-  <!-- LOGIN PAGE WITH CUBE & SHIELD -->
-  <div id="login-screen">
-    <!-- 3D Animated Cube Background -->
-    <div class="scene">
-      <div class="cube">
-        <div class="cube__face cube__face--front"><i class="ph ph-cube"></i></div>
-        <div class="cube__face cube__face--back"></div>
-        <div class="cube__face cube__face--right"></div>
-        <div class="cube__face cube__face--left"></div>
-        <div class="cube__face cube__face--top"></div>
-        <div class="cube__face cube__face--bottom"></div>
-      </div>
+    <!-- BACKGROUND -->
+    <div class="scene" id="bg-scene"></div>
+    <div id="toast-box"></div>
+
+    <!-- LOGIN -->
+    <div id="login-screen" style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:200; background:var(--bg-deep); display:flex; justify-content:center; align-items:center;">
+        <div class="glass" style="padding:40px; width:380px; text-align:center;">
+            <h2 style="margin-bottom:25px; color:var(--primary); letter-spacing: 2px;">W2W ULTIMATE</h2>
+            <form id="login-form">
+                <div style="margin-bottom:15px; text-align:left;">
+                    <label class="f-label">Username</label>
+                    <input type="text" id="l-user" value="admin">
+                </div>
+                <div style="margin-bottom:25px; text-align:left;">
+                    <label class="f-label">Password</label>
+                    <input type="password" id="l-pass" value="admin">
+                </div>
+                <button type="submit" class="btn" style="width:100%; justify-content:center; font-size:1rem; padding:10px;">LOGIN SYSTEM</button>
+            </form>
+        </div>
     </div>
 
-    <!-- Login Shield Container -->
-    <div id="login-wrapper">
-      <div class="login-shield">
-        
-        <!-- Setup View -->
-        <div id="view-setup" class="hidden">
-          <div class="login-header">
-            <div class="login-logo"><i class="ph ph-shield-check"></i></div>
-            <h1 class="login-title">SYSTEM INIT</h1>
-            <p class="login-subtitle">Initial Configuration Required</p>
-          </div>
-          <div class="input-group">
-            <label>Admin Username</label>
-            <input type="text" id="setup-user" value="admin" autocomplete="off">
-          </div>
-          <div class="input-group">
-            <label>Admin Password</label>
-            <input type="password" id="setup-pass" value="admin123">
-          </div>
-          <button class="btn" onclick="doSetup()">INITIALIZE SYSTEM</button>
-        </div>
+    <!-- MAIN APP -->
+    <div class="app hidden" id="app-main">
+        <nav>
+            <div class="brand">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                W2W SYSTEM
+            </div>
+            <div class="tabs">
+                <div class="tab active" data-t="dashboard">Dashboard</div>
+                <div class="tab" data-t="incoming">Barang Masuk</div>
+                <div class="tab" data-t="outgoing">Barang Keluar</div>
+                <div class="tab" data-t="stockopname">Stock Opname</div>
+                <div class="tab" data-t="history">Riwayat</div>
+                <div class="tab" data-t="suppliers">Supplier</div>
+                <div class="tab" data-t="admin">Master Data</div>
+            </div>
+            <div style="font-size:0.85rem; color:var(--text-muted); font-weight:500;" id="u-display">User</div>
+        </nav>
 
-        <!-- Login View -->
-        <div id="view-login">
-          <div class="login-header">
-            <div class="login-logo"><i class="ph ph-shield-star"></i></div>
-            <h1 class="login-title">ACCESS GRANTED</h1>
-            <p class="login-subtitle">Blue Steel Warehouse Management</p>
-          </div>
-          
-          <div class="input-group">
-            <label>Username ID</label>
-            <input type="text" id="login-user" placeholder="Enter ID" autocomplete="off">
-          </div>
-          <div class="input-group">
-            <label>Passcode</label>
-            <input type="password" id="login-pass" placeholder="••••••••" onkeypress="if(event.key==='Enter') doLogin()">
-          </div>
-          
-          <button class="btn" onclick="doLogin()">LOGIN SYSTEM</button>
-          
-          <div style="text-align: center; margin-top: 20px;">
-            <p class="login-subtitle" style="font-size: 0.7rem;">SECURE CONNECTION // V2.0</p>
-          </div>
-        </div>
+        <main>
+            <!-- DASHBOARD -->
+            <section id="v-dashboard">
+                <h3 class="section-title">Overview</h3>
+                <div class="f-grid" style="grid-template-columns: repeat(4, 1fr);">
+                    <div class="glass" style="padding:20px; text-align:center;">
+                        <div class="f-label">Total Items</div>
+                        <div style="font-size:2.5rem; font-weight:700; color:var(--primary);" id="d-items">0</div>
+                    </div>
+                    <div class="glass" style="padding:20px; text-align:center;">
+                        <div class="f-label">Total Stock</div>
+                        <div style="font-size:2.5rem; font-weight:700; color:var(--text-main);" id="d-stock">0</div>
+                    </div>
+                    <div class="glass" style="padding:20px; text-align:center;">
+                        <div class="f-label">Low Stock</div>
+                        <div style="font-size:2.5rem; font-weight:700; color:var(--warning);" id="d-low">0</div>
+                    </div>
+                    <div class="glass" style="padding:20px; text-align:center;">
+                        <div class="f-label">Tx Today</div>
+                        <div style="font-size:2.5rem; font-weight:700; color:var(--success);" id="d-tx">0</div>
+                    </div>
+                </div>
+            </section>
 
-      </div>
+            <!-- INCOMING -->
+            <section id="v-incoming" class="hidden">
+                <h3 class="section-title">Barang Masuk</h3>
+                <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px;">
+                    <div class="glass" style="padding:20px;">
+                        <div class="f-grid">
+                            <div><label class="f-label">Tanggal</label><input type="date" id="in-date"></div>
+                            <div><label class="f-label">Supplier</label><select id="in-supp"></select></div>
+                            <div><label class="f-label">Ref No</label><input type="text" id="in-ref"></div>
+                        </div>
+                        
+                        <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:12px; margin-bottom:15px; border:1px solid var(--border);">
+                            <div class="f-grid" style="grid-template-columns: 3fr 140px 100px auto;">
+                                <div class="ac-wrap">
+                                    <label class="f-label">Cari Barang (Enter)</label>
+                                    <input type="text" id="in-search" placeholder="Ketik nama..." autocomplete="off">
+                                    <div class="ac-list" id="in-list"></div>
+                                </div>
+                                <div>
+                                    <label class="f-label">Satuan</label>
+                                    <select id="in-unit"></select>
+                                </div>
+                                <div>
+                                    <label class="f-label">Qty</label>
+                                    <input type="number" id="in-qty" value="1" min="1">
+                                </div>
+                                <div style="display:flex; align-items:flex-end;">
+                                    <button type="button" class="btn" id="btn-add-in">Add</button>
+                                </div>
+                            </div>
+                            <div id="in-info" class="st-info">Stok saat ini: -</div>
+                        </div>
+                    </div>
+                    
+                    <div class="glass" style="padding:20px; display:flex; flex-direction:column;">
+                        <label class="f-label">Keranjang Transaksi</label>
+                        <div class="table-wrap" style="flex:1; max-height:350px; overflow-y:auto;">
+                            <table>
+                                <thead><tr><th>Item</th><th>Qty</th><th>Unit</th><th></th></tr></thead>
+                                <tbody id="in-cart"></tbody>
+                            </table>
+                        </div>
+                        <button type="button" class="btn" id="btn-save-in" style="width:100%; margin-top:15px; justify-content:center; font-size:1rem;">Simpan Transaksi</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- OUTGOING -->
+            <section id="v-outgoing" class="hidden">
+                <h3 class="section-title">Barang Keluar</h3>
+                <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px;">
+                    <div class="glass" style="padding:20px;">
+                        <div class="f-grid">
+                            <div><label class="f-label">Tanggal</label><input type="date" id="out-date"></div>
+                            <div style="grid-column:span 2"><label class="f-label">Tujuan/Ket</label><input type="text" id="out-dest"></div>
+                        </div>
+                        
+                        <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:12px; margin-bottom:15px; border:1px solid var(--border);">
+                            <div class="f-grid" style="grid-template-columns: 3fr 140px 100px auto;">
+                                <div class="ac-wrap">
+                                    <label class="f-label">Cari Barang (Enter)</label>
+                                    <input type="text" id="out-search" placeholder="Ketik nama..." autocomplete="off">
+                                    <div class="ac-list" id="out-list"></div>
+                                </div>
+                                <div>
+                                    <label class="f-label">Satuan</label>
+                                    <select id="out-unit"></select>
+                                </div>
+                                <div>
+                                    <label class="f-label">Qty</label>
+                                    <input type="number" id="out-qty" value="1" min="1">
+                                </div>
+                                <div style="display:flex; align-items:flex-end;">
+                                    <button type="button" class="btn btn-danger" id="btn-add-out">Add</button>
+                                </div>
+                            </div>
+                            <div id="out-info" class="st-info">Tersedia: -</div>
+                        </div>
+                    </div>
+                    
+                    <div class="glass" style="padding:20px; display:flex; flex-direction:column;">
+                        <label class="f-label">Keranjang Transaksi</label>
+                        <div class="table-wrap" style="flex:1; max-height:350px; overflow-y:auto;">
+                            <table>
+                                <thead><tr><th>Item</th><th>Qty</th><th>Unit</th><th></th></tr></thead>
+                                <tbody id="out-cart"></tbody>
+                            </table>
+                        </div>
+                        <button type="button" class="btn btn-danger" id="btn-save-out" style="width:100%; margin-top:15px; justify-content:center; font-size:1rem;">Simpan Keluar</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- STOCK OPNAME -->
+            <section id="v-stockopname" class="hidden">
+                <h3 class="section-title">Stock Opname</h3>
+                <div class="glass" style="padding:20px;">
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width:100px;">Code</th>
+                                    <th>Item Name</th>
+                                    <th>System Stock</th>
+                                    <th style="width:140px;">Count Unit</th>
+                                    <th style="width:100px;">Fisik (Qty)</th>
+                                    <th style="width:100px;">Selisih</th>
+                                    <th style="width:60px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="op-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- HISTORY -->
+            <section id="v-history" class="hidden">
+                <h3 class="section-title">Riwayat Transaksi</h3>
+                <div class="glass" style="padding:15px; margin-bottom:15px; display:flex; gap:10px;">
+                    <input type="text" id="h-search" placeholder="Cari Item..." style="width:250px;">
+                    <select id="h-type" style="width:150px;"><option value="all">Semua</option><option value="IN">Masuk</option><option value="OUT">Keluar</option><option value="ADJ">Opname</option></select>
+                </div>
+                <div class="glass" style="padding:0; overflow:hidden;">
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th style="width:120px;">Date</th><th style="width:60px;">Type</th><th>Ref</th><th>Item</th><th style="width:80px; text-align:right;">Qty</th><th style="width:80px;">Unit</th><th>User</th></tr></thead>
+                            <tbody id="h-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SUPPLIERS -->
+            <section id="v-suppliers" class="hidden">
+                <h3 class="section-title">Master Supplier</h3>
+                <div class="glass" style="padding:20px;">
+                    <form id="f-supp" style="display:grid; grid-template-columns: 1fr 1fr 1fr auto; gap:15px; margin-bottom:20px; align-items:end;">
+                        <div>
+                            <label class="f-label">Nama Supplier</label>
+                            <input type="text" id="s-name" required>
+                        </div>
+                        <div>
+                            <label class="f-label">Kontak</label>
+                            <input type="text" id="s-contact">
+                        </div>
+                        <div>
+                            <label class="f-label">Alamat</label>
+                            <input type="text" id="s-addr" placeholder="Jalan, Kota...">
+                        </div>
+                        <button type="submit" class="btn">Add</button>
+                        <div style="grid-column: 1 / -1;">
+                            <label class="f-label">Keterangan</label>
+                            <textarea id="s-notes" rows="1" placeholder="Catatan tambahan..."></textarea>
+                        </div>
+                    </form>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Nama</th><th>Kontak</th><th>Alamat</th><th>Keterangan</th><th style="width:60px;"></th></tr></thead>
+                            <tbody id="s-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ADMIN -->
+            <section id="v-admin" class="hidden">
+                <h3 class="section-title">Master Data</h3>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+                    
+                    <!-- ITEM MASTER -->
+                    <div class="glass" style="padding:20px;">
+                        <h4 style="margin-bottom:15px; color:var(--primary);">Data Barang</h4>
+                        <form id="f-item" style="display:grid; gap:15px; margin-bottom:20px; background:rgba(255,255,255,0.03); padding:15px; border-radius:12px;">
+                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                                <input type="text" id="i-code" placeholder="Kode (Unique)" required>
+                                <input type="text" id="i-name" placeholder="Nama Barang" required>
+                            </div>
+                            <div style="display:grid; grid-template-columns: 1fr 1fr auto; gap:15px;">
+                                <input type="text" id="i-base" placeholder="Satuan Dasar (PCS)" required>
+                                <input type="number" id="i-min" placeholder="Min Stock" required>
+                                <button type="submit" class="btn">Simpan</button>
+                            </div>
+                        </form>
+                        <div class="table-wrap" style="max-height:250px; overflow-y:auto;">
+                            <table>
+                                <thead><tr><th style="width:80px;">Code</th><th>Name</th><th style="width:100px;">Stock</th><th style="width:50px;"></th></tr></thead>
+                                <tbody id="i-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- UNIT MANAGEMENT -->
+                    <div class="glass" style="padding:20px;">
+                        <h4 style="margin-bottom:15px; color:var(--warning);">Manage Units & Conversions</h4>
+                        <div style="margin-bottom:20px;">
+                            <label class="f-label">Pilih Barang</label>
+                            <select id="adm-sel-item" style="width:100%;">
+                                <option value="">-- Pilih Barang --</option>
+                            </select>
+                        </div>
+
+                        <div id="adm-unit-panel" class="hidden" style="border-top:1px solid var(--border); padding-top:20px;">
+                            <div style="margin-bottom:15px;">
+                                <label class="f-label">Daftar Satuan Aktif:</label>
+                                <div id="adm-unit-list" style="min-height:50px; background:rgba(0,0,0,0.2); padding:10px; border-radius:12px;"></div>
+                            </div>
+
+                            <form id="f-add-unit" style="display:flex; gap:10px; align-items:flex-end;">
+                                <div style="flex:1;">
+                                    <label class="f-label">Nama Satuan</label>
+                                    <input type="text" id="adm-u-name" placeholder="Contoh: Box">
+                                </div>
+                                <div style="width:80px;">
+                                    <label class="f-label">Faktor</label>
+                                    <input type="number" id="adm-u-factor" placeholder="12" min="1">
+                                </div>
+                                <button type="submit" class="btn btn-sm">Add</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- USERS -->
+                    <div class="glass" style="padding:20px;">
+                        <h4 style="margin-bottom:15px; color:var(--primary);">Data User</h4>
+                        <form id="f-user" style="display:flex; gap:10px; margin-bottom:15px;">
+                            <input type="text" id="u-name" placeholder="User" required>
+                            <input type="password" id="u-pass" placeholder="Pass" required>
+                            <select id="u-role"><option value="user">User</option><option value="admin">Admin</option></select>
+                            <button type="submit" class="btn btn-sm">+</button>
+                        </form>
+                        <div class="table-wrap">
+                            <table><thead><tr><th>User</th><th>Role</th><th style="width:50px;"></th></tr></thead><tbody id="u-body"></tbody></table>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+        </main>
     </div>
-  </div>
 
-  <!-- MAIN APP LAYOUT (Hidden Initially) -->
-  <div id="app-layout" class="hidden">
-    <aside>
-      <div class="brand">
-        <i class="ph ph-cube-transparent" style="font-size:24px;"></i>
-        <span>BLUE STEEL</span>
-      </div>
-      <nav>
-        <a href="#" class="nav-link active" onclick="switchTab('masuk', this)"><i class="ph ph-arrow-down-left"></i> Barang Masuk</a>
-        <a href="#" class="nav-link" onclick="switchTab('keluar', this)"><i class="ph ph-arrow-up-right"></i> Barang Keluar</a>
-        <a href="#" class="nav-link" onclick="switchTab('riwayat', this)"><i class="ph ph-clock-counter-clockwise"></i> Riwayat</a>
-        <a href="#" class="nav-link" id="nav-master" onclick="switchTab('master', this)"><i class="ph ph-database"></i> Data Master</a>
-        <a href="#" class="nav-link" id="nav-admin" onclick="switchTab('admin', this)"><i class="ph ph-shield-check"></i> Admin</a>
-      </nav>
-      <div class="user-profile">
-        <div>
-          <div id="user-name" style="font-weight:600; font-size:0.9rem;">Admin User</div>
-          <div id="user-role" style="font-size:0.8rem; color:var(--text-muted);">ADMINISTRATOR</div>
-        </div>
-        <button class="btn-outline btn-sm" style="padding:4px 8px; border:none;" onclick="logout()"><i class="ph ph-sign-out" style="font-size:1.2rem;"></i></button>
-      </div>
-    </aside>
+    <script>
+        const App = {
+            data: { users: [], items: [], suppliers: [], tx: [] },
+            user: null,
+            cartIn: [],
+            cartOut: [],
+            tmpItem: null,
 
-    <main>
-      
-      <!-- TAB MASUK -->
-      <section id="tab-masuk" class="page active">
-        <div class="flex justify-between items-center mb-4">
-          <h2 style="margin:0;">Input Barang Masuk</h2>
-        </div>
+            init() {
+                this.load();
+                this.bg();
+                this.events();
+                if(this.user) this.showApp();
+                this.dates();
+            },
 
-        <div class="card form-grid">
-          <div>
-            <label>Tanggal</label>
-            <input type="date" id="in-date">
-          </div>
-          <div>
-            <label>No. Surat Jalan</label>
-            <input type="text" id="in-ref" placeholder="SJ-xxx">
-          </div>
-          <div>
-            <label>Supplier</label>
-            <input type="text" id="in-supplier">
-          </div>
-        </div>
+            load() {
+                const s = localStorage.getItem('w2w_ultimate');
+                if(s) {
+                    try {
+                        this.data = JSON.parse(s);
+                        // Validation check to prevent corruption errors
+                        if(!Array.isArray(this.data.items)) throw new Error("Data Corrupted");
+                    } catch(e) {
+                        console.error("Data Load Error, Resetting", e);
+                        this.resetData();
+                    }
+                } else {
+                    this.resetData();
+                }
+            },
+            
+            resetData() {
+                this.data.users = [{u:'admin',p:'admin',r:'admin'}];
+                this.data.suppliers = [{id:1, n:'PT Steel', c:'081', a:'Jl. A', notes:'Utama'}];
+                this.data.items = [
+                    {c:'S001', n:'Besi Beton', b:'Batang', s:100, m:20, units:[{n:'Batang', f:1}, {n:'Ikatan', f:10}]},
+                    {c:'S002', n:'Semen', b:'Sak', s:50, m:10, units:[{n:'Sak', f:1}]},
+                    {c:'E001', n:'Kabel', b:'Meter', s:200, m:50, units:[{n:'Meter', f:1}, {n:'Roll', f:50}]}
+                ];
+                this.save();
+            },
 
-        <div class="card" style="border-color: var(--primary); box-shadow: 0 0 10px rgba(56,189,248,0.1);">
-          <h3 style="margin-top:0; font-size:1rem; color:var(--primary);">Fast Entry Item</h3>
-          <div class="form-grid" style="margin-bottom:0;">
-            <div style="grid-column: span 2;">
-              <label>Nama Barang (Auto)</label>
-              <input type="text" id="in-name" placeholder="Ketik nama barang..." oninput="autocomplete(this)">
-            </div>
-            <div>
-              <label>Qty</label>
-              <input type="number" id="in-qty" placeholder="0">
-            </div>
-            <div>
-              <label>Satuan</label>
-              <select id="in-unit"></select>
-            </div>
-            <div>
-              <label>&nbsp;</label>
-              <button class="btn btn-sm" onclick="addItem('IN')"><i class="ph ph-plus"></i></button>
-            </div>
-          </div>
-          <div id="in-conversion-info" class="text-muted text-sm" style="margin-top:10px;"></div>
-        </div>
+            save() { 
+                localStorage.setItem('w2w_ultimate', JSON.stringify(this.data)); 
+            },
+            dates() {
+                const d = new Date().toISOString().split('T')[0];
+                document.getElementById('in-date').value = d;
+                document.getElementById('out-date').value = d;
+            },
 
-        <div class="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Kode</th>
-                <th>Nama Barang</th>
-                <th>Qty</th>
-                <th>Satuan</th>
-                <th>Total (Base)</th>
-                <th>Aksi</th>
-              </tr>
-            </thead>
-            <tbody id="list-in"></tbody>
-          </table>
-        </div>
-        <div class="mt-4 text-right">
-          <button class="btn" onclick="submitTransaction('IN')">Simpan Transaksi</button>
-        </div>
-      </section>
+            toast(m, t='success') {
+                const b = document.getElementById('toast-box');
+                const e = document.createElement('div');
+                e.className = 'toast'; e.style.borderLeftColor = t==='error'?'var(--danger)':'var(--success)';
+                e.innerText = m; b.appendChild(e);
+                setTimeout(()=> e.remove(), 3000);
+            },
+            bg() {
+                const s = document.getElementById('bg-scene');
+                for(let i=0;i<20;i++) {
+                    const c = document.createElement('div'); c.className='cube';
+                    const sz = Math.random()*50+30; c.style.width=c.style.height=sz+'px';
+                    c.style.left=Math.random()*100+'%'; c.style.animationDuration=(Math.random()*20+25)+'s';
+                    s.appendChild(c);
+                }
+            },
 
-      <!-- TAB KELUAR -->
-      <section id="tab-keluar" class="page">
-        <h2>Input Barang Keluar</h2>
-        
-        <div class="card form-grid">
-           <div style="grid-column: span 3;">
-             <label>Keterangan Global</label>
-             <input type="text" id="out-notes" placeholder="Keterangan pengiriman...">
-           </div>
-        </div>
+            /* --- LOGIC --- */
+            getEffStock(item, type) {
+                const activeCart = type === 'in' ? this.cartIn : this.cartOut;
+                const inCartBase = activeCart.filter(x=>x.code === item.c).reduce((a,b)=>a+b.bq, 0);
+                return item.s - inCartBase;
+            },
 
-        <div class="card" style="border-color: var(--danger); box-shadow: 0 0 10px rgba(239,68,68,0.1);">
-          <h3 style="margin-top:0; font-size:1rem; color:var(--danger);">Fast Entry Item</h3>
-          <div class="form-grid" style="margin-bottom:0;">
-            <div style="grid-column: span 2;">
-              <label>Nama Barang</label>
-              <input type="text" id="out-name" placeholder="Ketik nama..." oninput="autocomplete(this)">
-            </div>
-            <div>
-              <label>Stok</label>
-              <input type="text" id="out-stock-display" readonly style="color:var(--text-muted);">
-            </div>
-            <div>
-              <label>Qty</label>
-              <input type="number" id="out-qty" placeholder="0">
-            </div>
-            <div>
-              <label>Satuan</label>
-              <select id="out-unit"></select>
-            </div>
-            <div>
-              <label>&nbsp;</label>
-              <button class="btn btn-sm btn-danger" onclick="addItem('OUT')"><i class="ph ph-minus"></i></button>
-            </div>
-          </div>
-           <div id="out-conversion-info" class="text-muted text-sm" style="margin-top:10px;"></div>
-        </div>
+            clearCarts() {
+                this.cartIn = [];
+                this.cartOut = [];
+                this.renderCart('in');
+                this.renderCart('out');
+            },
 
-        <div class="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Kode</th>
-                <th>Nama Barang</th>
-                <th>Qty</th>
-                <th>Satuan</th>
-                <th>Total (Base)</th>
-                <th>Aksi</th>
-              </tr>
-            </thead>
-            <tbody id="list-out"></tbody>
-          </table>
-        </div>
-        <div class="mt-4 text-right">
-          <button class="btn btn-danger" onclick="submitTransaction('OUT')">Proses Keluar</button>
-        </div>
-      </section>
+            events() {
+                // Login
+                document.getElementById('login-form').onsubmit = (e) => {
+                    e.preventDefault();
+                    const u = document.getElementById('l-user').value;
+                    const p = document.getElementById('l-pass').value;
+                    const x = this.data.users.find(x=>x.u===u && x.p===p);
+                    if(x) { this.user = x; document.getElementById('login-screen').classList.add('hidden'); this.showApp(); this.toast('Login Success'); }
+                    else this.toast('Login Failed', 'error');
+                };
 
-      <!-- TAB RIWAYAT -->
-      <section id="tab-riwayat" class="page">
-        <div class="flex justify-between items-center mb-4">
-          <h2>Riwayat Transaksi</h2>
-          <button class="btn btn-outline" onclick="exportExcel()"><i class="ph ph-file-xls"></i> Export</button>
-        </div>
-        
-        <div class="card form-grid">
-           <div><label>Dari Tanggal</label><input type="date" id="hist-start"></div>
-           <div><label>Sampai Tanggal</label><input type="date" id="hist-end"></div>
-           <div><label>Tipe</label>
-             <select id="hist-type">
-               <option value="">Semua</option>
-               <option value="IN">Masuk</option>
-               <option value="OUT">Keluar</option>
-             </select>
-           </div>
-           <div style="display:flex; align-items:flex-end;"><button class="btn btn-sm" onclick="loadHistory()"><i class="ph ph-funnel"></i> Filter</button></div>
-        </div>
+                // Tabs
+                document.querySelectorAll('.tab').forEach(b => b.onclick = () => {
+                    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+                    document.querySelectorAll('section').forEach(s=>s.classList.add('hidden'));
+                    b.classList.add('active');
+                    document.getElementById('v-'+b.dataset.t).classList.remove('hidden');
+                    
+                    // CRITICAL FIX: CLEAR CARTS ON TAB SWITCH
+                    this.tmpItem = null;
+                    this.clearCarts();
 
-        <div class="table-container">
-          <table id="tbl-history">
-            <thead>
-              <tr>
-                <th>Tanggal</th>
-                <th>Tipe</th>
-                <th>Ref</th>
-                <th>Barang</th>
-                <th>Qty</th>
-                <th>Stok Akhir</th>
-                <th>User</th>
-              </tr>
-            </thead>
-            <tbody id="list-history"></tbody>
-          </table>
-        </div>
-      </section>
+                    if(b.dataset.t === 'stockopname') this.renderOpname();
+                    if(b.dataset.t === 'history') this.renderHist();
+                });
 
-      <!-- TAB DATA MASTER -->
-      <section id="tab-master" class="page">
-        <div class="flex justify-between items-center mb-4">
-          <h2>Master Data Barang</h2>
-        </div>
+                /* --- AUTOCOMPLETE & KEYBOARD FLOW --- */
+                const setupFlow = (type) => {
+                    const searchId = type+'-search';
+                    const listId = type+'-list';
+                    const unitId = type+'-unit';
+                    const infoId = type+'-info';
+                    const qtyId = type+'-qty';
+                    const btnId = 'btn-add-'+type;
+                    
+                    const inp = document.getElementById(searchId);
+                    const list = document.getElementById(listId);
+                    const qty = document.getElementById(qtyId);
 
-        <div class="card" style="margin-bottom:20px;">
-          <h3 style="margin-top:0; font-size:1rem; border-bottom:1px solid var(--border); padding-bottom:10px;">Form Barang</h3>
-          <input type="hidden" id="m-row">
-          <div class="form-grid">
-            <div><label>Kode Barang</label><input type="text" id="m-code"></div>
-            <div><label>Nama Barang</label><input type="text" id="m-name"></div>
-            <div><label>Satuan Dasar</label><input type="text" id="m-base" placeholder="Pcs"></div>
-            <div><label>Satuan Lain</label><input type="text" id="m-alt" placeholder="Box"></div>
-            <div><label>Faktor Konversi</label><input type="number" id="m-factor" placeholder="1 Box = ?"></div>
-            <div><label>Min Stok</label><input type="number" id="m-min"></div>
-          </div>
-          <div class="flex gap-2">
-            <button class="btn btn-sm" onclick="saveMaster()"><i class="ph ph-floppy-disk"></i> Simpan Data</button>
-            <button class="btn btn-sm btn-outline" onclick="resetMasterForm()">Reset</button>
-          </div>
-        </div>
+                    inp.addEventListener('input', () => {
+                        list.style.display = 'none';
+                        if(!inp.value) return;
+                        list.innerHTML = '';
+                        this.data.items.filter(i => i.n.toUpperCase().includes(inp.value.toUpperCase())).forEach(i => {
+                            const d = document.createElement('div');
+                            d.innerHTML = `<strong>${i.n}</strong> <span style="font-size:0.8em; opacity:0.6; margin-left:auto;">${i.c}</span>`;
+                            d.onclick = () => { 
+                                inp.value = i.n; 
+                                this.tmpItem = i;
+                                this.populateUnits(i, unitId); 
+                                this.updateStockInfo(infoId, i, type);
+                                list.style.display = 'none'; 
+                                qty.focus();
+                            };
+                            list.appendChild(d);
+                        });
+                        list.style.display = 'block';
+                    });
 
-        <div class="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Kode</th>
-                <th>Nama</th>
-                <th>Base</th>
-                <th>Alt</th>
-                <th>Faktor</th>
-                <th>Stok</th>
-                <th>Min</th>
-                <th>Aksi</th>
-              </tr>
-            </thead>
-            <tbody id="list-master"></tbody>
-          </table>
-        </div>
-      </section>
+                    inp.addEventListener('keydown', (e) => {
+                        if(e.key === 'Enter') {
+                            e.preventDefault();
+                            if(list.style.display === 'block' && list.children.length > 0) {
+                                list.children[0].click();
+                            } else if (this.tmpItem) {
+                                qty.focus();
+                            }
+                        }
+                    });
 
-      <!-- TAB ADMIN -->
-      <section id="tab-admin" class="page">
-        <h2>Admin & User Management</h2>
-        
-        <div class="card form-grid">
-           <div><label>Username</label><input type="text" id="new-u-name"></div>
-           <div><label>Password</label><input type="password" id="new-u-pass"></div>
-           <div><label>Role</label>
-             <select id="new-u-role">
-               <option value="staff">Staff Gudang</option>
-               <option value="admin">Administrator</option>
-             </select>
-           </div>
-           <div style="display:flex; align-items:flex-end;"><button class="btn btn-sm" onclick="createUser()">Tambah User</button></div>
-        </div>
+                    qty.addEventListener('keydown', (e) => {
+                        if(e.key === 'Enter') {
+                            e.preventDefault();
+                            document.getElementById(btnId).click();
+                        }
+                    });
 
-        <div class="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Username</th>
-                <th>Role</th>
-                <th>Aksi</th>
-              </tr>
-            </thead>
-            <tbody id="list-users"></tbody>
-          </table>
-        </div>
-      </section>
+                    document.addEventListener('click', (e) => { if(e.target !== inp) list.style.display = 'none'; });
+                };
 
-    </main>
-  </div>
+                setupFlow('in');
+                setupFlow('out');
 
-  <div id="toast">Notification</div>
+                // Incoming Actions
+                document.getElementById('in-qty').addEventListener('input', () => this.validateInput('in'));
+                document.getElementById('btn-add-in').onclick = () => this.addToCart('in');
+                document.getElementById('btn-save-in').onclick = () => this.saveTx('IN');
 
-  <script>
-    /* --- GLOBAL STATE --- */
-    let currentUser = null;
-    let masterData = [];
-    let tempItemsIN = [];
-    let tempItemsOUT = [];
-    let selectedItem = null;
+                // Outgoing Actions
+                document.getElementById('out-qty').addEventListener('input', () => this.validateInput('out'));
+                document.getElementById('btn-add-out').onclick = () => this.addToCart('out');
+                document.getElementById('btn-save-out').onclick = () => this.saveTx('OUT');
 
-    /* --- INIT & LOGIN --- */
-    window.onload = function() {
-      document.getElementById('in-date').valueAsDate = new Date();
-      
-      google.script.run.withSuccessHandler(res => {
-        if(res.initialized) {
-          document.getElementById('view-setup').classList.add('hidden');
-          document.getElementById('view-login').classList.remove('hidden');
-        } else {
-          document.getElementById('view-setup').classList.remove('hidden');
-          document.getElementById('view-login').classList.add('hidden');
-        }
-      }).checkSystemStatus();
-    };
+                /* --- ADMIN UNIT MANAGEMENT --- */
+                document.getElementById('adm-sel-item').onchange = (e) => {
+                    const v = e.target.value;
+                    const p = document.getElementById('adm-unit-panel');
+                    if(!v) { p.classList.add('hidden'); return; }
+                    p.classList.remove('hidden');
+                    const item = this.data.items.find(i=>i.c===v);
+                    this.renderUnitList(item);
+                };
 
-    function doSetup() {
-      const u = document.getElementById('setup-user').value;
-      const p = document.getElementById('setup-pass').value;
-      if(!u || !p) return showToast('Data wajib diisi', 'error');
-      
-      google.script.run.withSuccessHandler(() => {
-        location.reload();
-      }).setupSystem(u, p);
-    }
+                document.getElementById('f-add-unit').onsubmit = (e) => {
+                    e.preventDefault();
+                    const c = document.getElementById('adm-sel-item').value;
+                    const n = document.getElementById('adm-u-name').value;
+                    const f = parseFloat(document.getElementById('adm-u-factor').value);
+                    
+                    if(!c || !n || f<=0) return;
+                    const item = this.data.items.find(i=>i.c===c);
+                    if(item.units.find(u=>u.n===n)) return this.toast('Satuan sudah ada', 'error');
+                    
+                    item.units.push({n:n, f:f});
+                    this.save();
+                    this.renderUnitList(item);
+                    document.getElementById('adm-u-name').value=''; document.getElementById('adm-u-factor').value='';
+                    this.toast('Satuan Ditambah');
+                };
 
-    function doLogin() {
-      const u = document.getElementById('login-user').value;
-      const p = document.getElementById('login-pass').value;
-      
-      google.script.run.withSuccessHandler(res => {
-        if(res.status === 'success') {
-          currentUser = res.user;
-          // Animation transition
-          const screen = document.getElementById('login-screen');
-          screen.style.transition = "opacity 0.5s";
-          screen.style.opacity = "0";
-          
-          setTimeout(() => {
-            screen.classList.add('hidden');
-            document.getElementById('app-layout').classList.remove('hidden');
-            document.getElementById('user-name').innerText = currentUser.name;
-            document.getElementById('user-role').innerText = currentUser.role.toUpperCase();
-            applyRBAC();
-            loadMasterData();
-            loadHistory();
-            loadUsers();
-          }, 500);
-        } else {
-          showToast(res.message, 'error');
-        }
-      }).login(u, p);
-    }
+                /* --- FORMS --- */
+                document.getElementById('f-supp').onsubmit = (e) => {
+                    e.preventDefault();
+                    this.data.suppliers.push({
+                        id:Date.now(), n:document.getElementById('s-name').value,
+                        c:document.getElementById('s-contact').value, a:document.getElementById('s-addr').value,
+                        notes:document.getElementById('s-notes').value
+                    });
+                    this.save(); this.renderSupp(); document.getElementById('f-supp').reset();
+                };
 
-    function logout() {
-      location.reload();
-    }
+                document.getElementById('f-item').onsubmit = (e) => {
+                    e.preventDefault();
+                    const c = document.getElementById('i-code').value;
+                    if(this.data.items.find(x=>x.c===c)) return this.toast('Kode ada', 'error');
+                    const b = document.getElementById('i-base').value;
+                    this.data.items.push({
+                        c:c, n:document.getElementById('i-name').value, b:b,
+                        s:0, m:parseInt(document.getElementById('i-min').value),
+                        units: [{n:b, f:1}]
+                    });
+                    this.save(); this.renderItems(); this.renderAdminSelect(); document.getElementById('f-item').reset();
+                };
 
-    /* --- RBAC LOGIC --- */
-    function applyRBAC() {
-      if(currentUser.role === 'staff') {
-        document.getElementById('nav-admin').classList.add('hidden');
-        document.getElementById('nav-master').classList.add('hidden');
-      }
-    }
+                document.getElementById('f-user').onsubmit = (e) => {
+                    e.preventDefault();
+                    this.data.users.push({
+                        u:document.getElementById('u-name').value, p:document.getElementById('u-pass').value, r:document.getElementById('u-role').value
+                    });
+                    this.save(); this.renderUsers(); document.getElementById('f-user').reset();
+                };
 
-    function switchTab(tabId, el) {
-      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
-      
-      document.getElementById('tab-' + tabId).classList.add('active');
-      if(el) el.classList.add('active');
-    }
+                /* --- HISTORY --- */
+                document.getElementById('h-search').addEventListener('input', () => this.renderHist());
+                document.getElementById('h-type').addEventListener('change', () => this.renderHist());
+            },
 
-    /* --- MASTER DATA CRUD --- */
-    function loadMasterData() {
-      google.script.run.withSuccessHandler(data => {
-        masterData = data;
-        renderMasterTable();
-      }).getMasterData();
-    }
+            /* --- CORE FUNCTIONS --- */
+            populateUnits(item, selectId) {
+                const s = document.getElementById(selectId);
+                s.innerHTML = item.units.map(u => `<option value="${u.n}" data-f="${u.f}">${u.n}</option>`).join('');
+            },
 
-    function renderMasterTable() {
-      const tbody = document.getElementById('list-master');
-      tbody.innerHTML = '';
-      masterData.forEach(m => {
-        tbody.innerHTML += `
-          <tr>
-            <td>${m.code}</td>
-            <td>${m.name}</td>
-            <td>${m.baseUnit}</td>
-            <td>${m.altUnit || '-'}</td>
-            <td>${m.factor || '-'}</td>
-            <td class="${m.stock <= m.minStock ? 'text-danger' : ''}">${m.stock}</td>
-            <td>${m.minStock}</td>
-            <td>
-              ${currentUser.role === 'admin' ? `
-              <button class="btn-outline btn-sm" style="padding:4px 8px; font-size:12px; margin-right:5px;" onclick="editMaster('${m.code}')"><i class="ph ph-pencil-simple"></i></button>
-              <button class="btn-outline btn-sm" style="padding:4px 8px; font-size:12px; color:var(--danger); border-color:var(--danger);" onclick="deleteMaster('${m.code}')"><i class="ph ph-trash"></i></button>
-              ` : '-'}
-            </td>
-          </tr>
-        `;
-      });
-    }
+            updateStockInfo(divId, item, type) {
+                const d = document.getElementById(divId);
+                const eff = this.getEffStock(item, type);
+                if(divId === 'in-info') d.innerText = `Stok Sistem: ${item.s} ${item.b}`;
+                else d.innerText = `Tersedia: ${eff} ${item.b} (Kurang keranjang)`;
+                d.className = 'st-info ' + (eff < item.m ? 'bad' : 'good');
+            },
 
-    function saveMaster() {
-      const row = document.getElementById('m-row').value;
-      const item = {
-        isEdit: row !== '',
-        rowIndex: row,
-        code: document.getElementById('m-code').value,
-        name: document.getElementById('m-name').value,
-        baseUnit: document.getElementById('m-base').value,
-        altUnit: document.getElementById('m-alt').value,
-        factor: parseFloat(document.getElementById('m-factor').value) || 1,
-        minStock: parseFloat(document.getElementById('m-min').value) || 0
-      };
+            validateInput(type) {
+                const item = this.tmpItem;
+                if(!item) return;
+                const qty = parseFloat(document.getElementById(type+'-qty').value) || 0;
+                const sel = document.getElementById(type+'-unit');
+                // Guard: Check if selection exists
+                if(sel.selectedIndex < 0) {
+                     document.getElementById(type+'-info').innerText = "Pilih Satuan!";
+                     document.getElementById(type+'-info').className = 'st-info bad';
+                     return false;
+                }
+                const factor = parseFloat(sel.options[sel.selectedIndex].dataset.f);
+                const baseReq = qty * factor;
+                
+                const info = document.getElementById(type+'-info');
+                if(type === 'out') {
+                    const avail = this.getEffStock(item, 'out');
+                    if(baseReq > avail) {
+                        info.innerText = `Error: Kurang ${baseReq - avail} ${item.b}`;
+                        info.className = 'st-info bad';
+                        return false;
+                    } else {
+                        info.innerText = `Ok: Mengurangi ${baseReq} ${item.b}`;
+                        info.className = 'st-info good';
+                    }
+                }
+                return true;
+            },
 
-      if(!item.code || !item.name) return showToast('Kode dan Nama wajib diisi', 'error');
+            addToCart(type) {
+                if(!this.tmpItem) return;
+                if(type==='out' && !this.validateInput('out')) return;
+                
+                const item = this.tmpItem;
+                const qty = parseFloat(document.getElementById(type+'-qty').value) || 0;
+                if(qty<=0) return this.toast('Qty salah', 'error');
 
-      google.script.run.withSuccessHandler(() => {
-        showToast('Data tersimpan', 'success');
-        resetMasterForm();
-        loadMasterData();
-      }).saveMasterItem(item);
-    }
+                const sel = document.getElementById(type+'-unit');
+                const unitName = sel.value;
+                const factor = parseFloat(sel.options[sel.selectedIndex].dataset.f);
+                
+                // NaN Guard
+                if(isNaN(factor) || isNaN(qty)) return this.toast('Data Satuan Salah', 'error');
+                
+                const baseQty = qty * factor;
 
-    function editMaster(code) {
-      const m = masterData.find(x => x.code === code);
-      if(!m) return;
-      document.getElementById('m-row').value = m.rowIndex;
-      document.getElementById('m-code').value = m.code;
-      document.getElementById('m-name').value = m.name;
-      document.getElementById('m-base').value = m.baseUnit;
-      document.getElementById('m-alt').value = m.altUnit;
-      document.getElementById('m-factor').value = m.factor;
-      document.getElementById('m-min').value = m.minStock;
-      document.getElementById('m-code').disabled = true;
-    }
+                const cartData = {code:item.c, n:item.n, q:qty, u:unitName, f:factor, bq:baseQty};
+                if(type === 'in') this.cartIn.push(cartData);
+                else this.cartOut.push(cartData);
 
-    function deleteMaster(code) {
-      if(!confirm('Yakin hapus data ini?')) return;
-      const m = masterData.find(x => x.code === code);
-      google.script.run.withSuccessHandler(() => {
-        showToast('Data dihapus', 'success');
-        loadMasterData();
-      }).deleteMasterItem(m.rowIndex);
-    }
+                this.renderCart(type);
+                
+                // Reset and Focus Loop
+                document.getElementById(type+'-search').value=''; 
+                document.getElementById(type+'-search').focus(); 
+                document.getElementById(type+'-unit').innerHTML=''; 
+                document.getElementById(type+'-qty').value=1; 
+                document.getElementById(type+'-info').innerText='-';
+                document.getElementById(type+'-info').className = 'st-info';
+                this.tmpItem = null;
+            },
 
-    function resetMasterForm() {
-      document.getElementById('m-row').value = '';
-      document.getElementById('m-code').value = '';
-      document.getElementById('m-code').disabled = false;
-      document.getElementById('m-name').value = '';
-      document.getElementById('m-base').value = '';
-      document.getElementById('m-alt').value = '';
-      document.getElementById('m-factor').value = '';
-      document.getElementById('m-min').value = '';
-    }
+            renderCart(type) {
+                const activeCart = type === 'in' ? this.cartIn : this.cartOut;
+                const b = document.getElementById(type+'-cart');
+                b.innerHTML = activeCart.map((x,i) => 
+                    `<tr><td>${x.n}</td><td style="text-align:right;">${x.q}</td><td style="text-align:center;">${x.u}</td><td style="text-align:center;"><button onclick="App.rmCart('${type}',${i})" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:1.2rem;">&times;</button></td></tr>`
+                ).join('');
+            },
+            rmCart(t,i) { 
+                if(t==='in') this.cartIn.splice(i,1);
+                else this.cartOut.splice(i,1);
+                this.renderCart(t); 
+            },
 
-    /* --- USER MANAGEMENT --- */
-    function loadUsers() {
-      google.script.run.withSuccessHandler(data => {
-        const tbody = document.getElementById('list-users');
-        tbody.innerHTML = '';
-        data.forEach(u => {
-          tbody.innerHTML += `
-            <tr>
-              <td>${u.username}</td>
-              <td><span class="badge ${u.role === 'admin' ? 'badge-in' : 'badge-out'}">${u.role}</span></td>
-              <td>
-                <button class="btn-outline btn-sm" style="padding:4px 8px; font-size:12px; color:var(--danger); border-color:var(--danger);" onclick="deleteUser('${u.rowIndex}')"><i class="ph ph-trash"></i></button>
-              </td>
-            </tr>
-          `;
-        });
-      }).getUsers();
-    }
+            saveTx(type) {
+                const activeCart = type === 'IN' ? this.cartIn : this.cartOut;
+                if(activeCart.length===0) return this.toast('Keranjang kosong', 'warning');
+                
+                const ref = type==='IN' ? document.getElementById('in-ref').value : document.getElementById('out-dest').value;
+                const d = document.getElementById(type+'-date').value;
+                
+                let errorFound = false;
 
-    function createUser() {
-      const u = document.getElementById('new-u-name').value;
-      const p = document.getElementById('new-u-pass').value;
-      const r = document.getElementById('new-u-role').value;
-      if(!u || !p) return showToast('Isi username & password', 'error');
-      
-      google.script.run.withSuccessHandler(() => {
-        showToast('User dibuat', 'success');
-        document.getElementById('new-u-name').value = '';
-        document.getElementById('new-u-pass').value = '';
-        loadUsers();
-      }).createUser({username: u, password: p, role: r, fullname: u});
-    }
+                // LOOP AND UPDATE STOCK
+                activeCart.forEach(c => {
+                    const it = this.data.items.find(x=>x.c===c.code);
+                    
+                    if(!it) {
+                        console.error("Master item missing for transaction", c);
+                        return; 
+                    }
 
-    function deleteUser(idx) {
-      if(!confirm('Hapus user ini?')) return;
-      google.script.run.withSuccessHandler(() => loadUsers()).deleteUser(idx);
-    }
+                    // NaN Guard 2
+                    if(isNaN(c.bq)) {
+                        this.toast(`Error pada item ${c.n}: Nilai stok tidak valid`, 'error');
+                        errorFound = true;
+                        return;
+                    }
 
-    /* --- AUTOCOMPLETE & CONVERSION --- */
-    function autocomplete(inp) {
-      let list = inp.parentElement.querySelector('.autocomplete-items');
-      if(list) list.remove();
-      
-      let val = inp.value;
-      if(!val) return;
-      
-      list = document.createElement('DIV');
-      list.setAttribute('class', 'autocomplete-items');
-      list.style.position = 'absolute';
-      list.style.zIndex = '99';
-      list.style.top = (inp.offsetTop + inp.offsetHeight) + 'px';
-      list.style.left = inp.offsetLeft + 'px';
-      list.style.width = inp.offsetWidth + 'px';
-      list.style.background = 'var(--bg-accent)';
-      list.style.border = '1px solid var(--border)';
-      inp.parentElement.appendChild(list);
+                    if(type==='IN') {
+                        // Ensure stock is number
+                        it.s = (parseFloat(it.s) || 0) + c.bq;
+                    } else {
+                        it.s = (parseFloat(it.s) || 0) - c.bq;
+                    }
 
-      let count = 0;
-      masterData.forEach(item => {
-        if(item.name.toLowerCase().indexOf(val.toLowerCase()) > -1 && count < 5) {
-          let div = document.createElement('DIV');
-          div.innerHTML = `<strong>${item.name.substr(0, val.length)}</strong>${item.name.substr(val.length)}`;
-          div.innerHTML += `<span style="font-size:12px; color:var(--text-muted); float:right;">Stock: ${item.stock}</span>`;
-          div.addEventListener('click', () => {
-            inp.value = item.name;
-            selectedItem = item;
-            setupUnits(item);
-            list.remove();
-          });
-          list.appendChild(div);
-          count++;
-        }
-      });
-    }
+                    // Log Transaction
+                    this.data.tx.unshift({
+                        id:Date.now()+Math.random(), d:d, t:type, r:ref||'N/A', i:c.n, q:c.q, u:c.u, user:this.user.u
+                    });
+                });
 
-    function setupUnits(item) {
-      const prefix = document.getElementById('tab-keluar').classList.contains('active') ? 'out' : 'in';
-      const sel = document.getElementById(prefix + '-unit');
-      sel.innerHTML = '';
-      
-      let opt1 = document.createElement('option');
-      opt1.value = item.baseUnit;
-      opt1.text = item.baseUnit;
-      sel.add(opt1);
-      
-      if(item.altUnit) {
-        let opt2 = document.createElement('option');
-        opt2.value = item.altUnit;
-        opt2.text = item.altUnit;
-        sel.add(opt2);
-      }
-      
-      sel.onchange = () => calcConversion(item);
-      
-      if(prefix === 'out') {
-        document.getElementById('out-stock-display').value = item.stock + ' ' + item.baseUnit;
-      }
-    }
+                if(errorFound) return;
 
-    function calcConversion(item) {
-      const prefix = document.getElementById('tab-keluar').classList.contains('active') ? 'out' : 'in';
-      const qty = parseFloat(document.getElementById(prefix + '-qty').value) || 0;
-      const unit = document.getElementById(prefix + '-unit').value;
-      
-      let total = qty;
-      let txt = '';
-      
-      if(unit === item.altUnit && item.factor) {
-        total = qty * item.factor;
-        txt = `Konversi: ${qty} ${item.altUnit} = ${total} ${item.baseUnit}`;
-      } else {
-        txt = `Total: ${total} ${item.baseUnit}`;
-      }
-      
-      document.getElementById(prefix + '-conversion-info').innerText = txt;
-      return total;
-    }
+                // FORCE SAVE
+                this.save(); 
+                
+                // CLEAR SPECIFIC CART
+                if(type === 'IN') this.cartIn = [];
+                else this.cartOut = [];
+                
+                this.renderCart(type); 
+                this.renderDash(); 
+                this.renderItems(); // Force update stock list
+                this.toast('Transaksi Berhasil Disimpan');
+                
+                document.getElementById('in-ref').value=''; 
+                document.getElementById('out-dest').value='';
+            },
 
-    document.getElementById('in-qty').addEventListener('keyup', (e) => {
-      if(selectedItem) calcConversion(selectedItem);
-    });
-    document.getElementById('out-qty').addEventListener('keyup', (e) => {
-      if(selectedItem) calcConversion(selectedItem);
-    });
+            renderUnitList(item) {
+                const d = document.getElementById('adm-unit-list');
+                d.innerHTML = item.units.map((u, idx) => 
+                    `<div class="unit-tag">${u.n} (x${u.f}) ${u.f!==1 ? `<span onclick="App.delUnit('${item.c}',${idx})" style="margin-left:8px; font-weight:bold; cursor:pointer;">&times;</span>` : ''}</div>`
+                ).join('');
+            },
+            delUnit(code, idx) {
+                if(!confirm('Hapus satuan ini?')) return;
+                const it = this.data.items.find(i=>i.c===code);
+                if(it.units[idx].f === 1) return this.toast('Tidak bisa hapus satuan dasar', 'error');
+                it.units.splice(idx, 1);
+                this.save(); this.renderUnitList(it);
+            },
 
-    /* --- TRANSACTION ITEMS --- */
-    function addItem(type) {
-      if(!selectedItem) return showToast('Pilih barang dulu', 'error');
-      
-      const prefix = type === 'IN' ? 'in' : 'out';
-      const qty = parseFloat(document.getElementById(prefix + '-qty').value);
-      const unit = document.getElementById(prefix + '-unit').value;
-      
-      if(!qty) return showToast('Qty harus diisi', 'error');
-      
-      let totalBase = (unit === selectedItem.altUnit && selectedItem.factor) ? (qty * selectedItem.factor) : qty;
-      
-      if(type === 'OUT' && totalBase > selectedItem.stock) return showToast('Stok tidak cukup!', 'error');
+            /* --- RENDERS --- */
+            showApp() {
+                document.getElementById('app-main').classList.remove('hidden');
+                document.getElementById('u-display').innerText = this.user.u;
+                this.renderAll();
+            },
+            renderAll() {
+                this.renderDash();
+                this.renderSupp();
+                this.renderItems();
+                this.renderAdminSelect();
+                this.renderUsers();
+            },
+            renderDash() {
+                document.getElementById('d-items').innerText = this.data.items.length;
+                document.getElementById('d-stock').innerText = this.data.items.reduce((a,b)=>a+(parseFloat(b.s)||0), 0);
+                document.getElementById('d-low').innerText = this.data.items.filter(i=>i.s<=i.m).length;
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('d-tx').innerText = this.data.tx.filter(t=>t.d===today).length;
+            },
+            renderSupp() {
+                const b = document.getElementById('s-body');
+                const sl = document.getElementById('in-supp');
+                b.innerHTML = this.data.suppliers.map((s,i) => 
+                    `<tr><td><strong>${s.n}</strong></td><td>${s.c}</td><td>${s.a||'-'}</td><td><small style="color:var(--text-muted)">${s.notes||'-'}</small></td><td style="text-align:center;"><button class="btn-ghost btn-sm" onclick="App.delSupp(${i})">&times;</button></td></tr>`
+                ).join('');
+                sl.innerHTML = '<option value="">Pilih Supplier</option>' + this.data.suppliers.map(s => `<option value="${s.n}">${s.n}</option>`).join('');
+            },
+            delSupp(i) { if(confirm('Hapus?')) { this.data.suppliers.splice(i,1); this.save(); this.renderSupp(); } },
+            
+            renderItems() {
+                const b = document.getElementById('i-body');
+                b.innerHTML = this.data.items.map(i => 
+                    `<tr><td>${i.c}</td><td>${i.n}</td><td><strong>${i.s}</strong> ${i.b}</td><td style="text-align:center;"><button class="btn-ghost btn-sm" onclick="App.delItem('${i.c}')">&times;</button></td></tr>`
+                ).join('');
+            },
+            delItem(c) { if(confirm('Hapus?')) { this.data.items = this.data.items.filter(i=>i.c!==c); this.save(); this.renderItems(); } },
+            
+            renderAdminSelect() {
+                const s = document.getElementById('adm-sel-item');
+                const curr = s.value;
+                s.innerHTML = '<option value="">-- Pilih Barang --</option>' + this.data.items.map(i => `<option value="${i.c}">${i.n}</option>`).join('');
+                if(curr) s.value = curr;
+            },
 
-      const item = {
-        code: selectedItem.code,
-        name: selectedItem.name,
-        qty: qty,
-        unit: unit,
-        totalBase: totalBase
-      };
-      
-      if(type === 'IN') tempItemsIN.push(item);
-      else tempItemsOUT.push(item);
-      
-      renderList(type);
-      
-      document.getElementById(prefix + '-name').value = '';
-      document.getElementById(prefix + '-qty').value = '';
-      document.getElementById(prefix + '-conversion-info').innerText = '';
-      if(prefix === 'out') document.getElementById('out-stock-display').value = '';
-      selectedItem = null;
-      document.getElementById(prefix + '-name').focus();
-    }
+            renderUsers() {
+                const b = document.getElementById('u-body');
+                b.innerHTML = this.data.users.map((u,i) => 
+                    `<tr><td>${u.u}</td><td>${u.r}</td><td style="text-align:center;">${u.u!=='admin'?`<button class="btn-ghost btn-sm" onclick="App.delUser(${i})">&times;</button>`:''}</td></tr>`
+                ).join('');
+            },
+            delUser(i) { if(confirm('Hapus?')) { this.data.users.splice(i,1); this.save(); this.renderUsers(); } },
 
-    function renderList(type) {
-      const list = type === 'IN' ? tempItemsIN : tempItemsOUT;
-      const tbody = document.getElementById('list-' + (type === 'IN' ? 'in' : 'out'));
-      tbody.innerHTML = '';
-      
-      list.forEach((item, idx) => {
-        tbody.innerHTML += `
-          <tr>
-            <td>${item.code}</td>
-            <td>${item.name}</td>
-            <td>${item.qty}</td>
-            <td>${item.unit}</td>
-            <td>${item.totalBase}</td>
-            <td><button class="btn-outline btn-sm" style="padding:2px 6px; color:var(--danger);" onclick="removeItem('${type}', ${idx})">x</button></td>
-          </tr>
-        `;
-      });
-    }
+            renderHist() {
+                const s = document.getElementById('h-search').value.toLowerCase();
+                const t = document.getElementById('h-type').value;
+                const b = document.getElementById('h-body');
+                b.innerHTML = this.data.tx
+                    .filter(x => (t==='all'||x.t===t) && x.i.toLowerCase().includes(s))
+                    .slice(0,50)
+                    .map(x => `<tr><td>${x.d}</td><td><span style="font-weight:bold; color:${x.t==='IN'?'var(--success)':(x.t==='OUT'?'var(--danger)':'var(--warning)')}">${x.t}</span></td><td>${x.r}</td><td>${x.i}</td><td style="text-align:right;">${x.q}</td><td style="text-align:center;">${x.u}</td><td>${x.user}</td></tr>`).join('');
+            },
 
-    function removeItem(type, idx) {
-      if(type === 'IN') tempItemsIN.splice(idx, 1);
-      else tempItemsOUT.splice(idx, 1);
-      renderList(type);
-    }
+            renderOpname() {
+                const b = document.getElementById('op-body');
+                b.innerHTML = this.data.items.map(i => {
+                    let opts = i.units.map(u => `<option value="${u.n}" data-f="${u.f}">${u.n}</option>`).join('');
+                    return `
+                    <tr>
+                        <td>${i.c}</td>
+                        <td>${i.n}</td>
+                        <td style="font-weight:bold;">${i.s} ${i.b}</td>
+                        <td><select class="op-unit" onchange="App.calcOpname(this)">${opts}</select></td>
+                        <td><input type="number" class="op-input" data-c="${i.c}" style="width:100%; text-align:center;" oninput="App.calcOpname(this)"></td>
+                        <td class="op-diff">0</td>
+                        <td><button class="btn btn-sm" onclick="App.adjOpname(this)">Adj</button></td>
+                    </tr>`;
+                }).join('');
+            },
+            calcOpname(el) {
+                const row = el.closest('tr');
+                const code = row.querySelector('.op-input').dataset.c;
+                const item = this.data.items.find(x=>x.c===code);
+                const sel = row.querySelector('.op-unit');
+                const factor = parseFloat(sel.options[sel.selectedIndex].dataset.f);
+                const phy = parseFloat(row.querySelector('.op-input').value)||0;
+                const diff = (phy * factor) - item.s;
+                const d = row.querySelector('.op-diff');
+                d.innerText = diff>0?`+${diff}`:diff;
+                d.style.color = diff>0?'var(--success)':(diff<0?'var(--danger)':'inherit');
+            },
+            adjOpname(btn) {
+                const row = btn.closest('tr');
+                const code = row.querySelector('.op-input').dataset.c;
+                const diffStr = row.querySelector('.op-diff').innerText;
+                const diff = parseFloat(diffStr);
+                if(diff===0) return this.toast('Tidak ada selisih', 'warning');
+                
+                const it = this.data.items.find(x=>x.c===code);
+                it.s += diff;
+                
+                this.data.tx.unshift({
+                    id:Date.now(), d:document.getElementById('in-date').value, t:'ADJ', r:'Opname', i:it.n, q:Math.abs(diff), u:it.b, user:this.user.u
+                });
+                
+                this.save(); this.renderOpname(); this.renderDash(); this.toast('Stok Diadjust');
+            }
+        };
 
-    function submitTransaction(type) {
-      const list = type === 'IN' ? tempItemsIN : tempItemsOUT;
-      if(list.length === 0) return showToast('List kosong', 'error');
-      
-      const header = {
-        type: type,
-        date: new Date(),
-        noRef: type === 'IN' ? document.getElementById('in-ref').value : '-',
-        supplier: type === 'IN' ? document.getElementById('in-supplier').value : '-',
-        user: currentUser.username
-      };
-      
-      google.script.run.withSuccessHandler(res => {
-        if(res.status === 'success') {
-          showToast('Transaksi Berhasil', 'success');
-          list.length = 0;
-          renderList(type);
-          loadMasterData();
-          loadHistory();
-        }
-      }).processTransaction(header, list);
-    }
-
-    /* --- HISTORY --- */
-    function loadHistory() {
-      const filters = {
-        start: document.getElementById('hist-start').value,
-        end: document.getElementById('hist-end').value,
-        type: document.getElementById('hist-type').value
-      };
-      
-      google.script.run.withSuccessHandler(data => {
-        const tbody = document.getElementById('list-history');
-        tbody.innerHTML = '';
-        data.forEach(r => {
-          let badge = r.type === 'IN' ? 'badge-in' : 'badge-out';
-          tbody.innerHTML += `
-            <tr>
-              <td>${new Date(r.date).toLocaleDateString()}</td>
-              <td><span class="badge ${badge}">${r.type}</span></td>
-              <td>${r.ref}</td>
-              <td>${r.name}</td>
-              <td>${r.qtyIn || r.qtyOut}</td>
-              <td>${r.stockEnd}</td>
-              <td>${r.user}</td>
-            </tr>
-          `;
-        });
-      }).getHistory(filters);
-    }
-
-    function exportExcel() {
-      let table = document.getElementById("tbl-history");
-      let html = table.outerHTML;
-      let url = 'data:application/vnd.ms-excel,' + encodeURIComponent(html);
-      let link = document.createElement("a");
-      link.download = "History.xls";
-      link.href = url;
-      link.click();
-    }
-
-    function showToast(msg, type='success') {
-      const t = document.getElementById('toast');
-      t.innerText = msg;
-      t.className = type === 'error' ? 'error' : '';
-      t.classList.add('show');
-      setTimeout(() => t.classList.remove('show'), 3000);
-    }
-  </script>
+        App.init();
+    </script>
 </body>
 </html>
