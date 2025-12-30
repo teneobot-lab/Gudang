@@ -789,7 +789,10 @@
                 if(activeCart.length===0) return this.toast('Keranjang kosong', 'warning');
                 
                 const ref = type==='IN' ? document.getElementById('in-ref').value : document.getElementById('out-dest').value;
-                const d = document.getElementById(type+'-date').value;
+                const d = type === 'IN'
+    ? document.getElementById('in-date').value
+    : document.getElementById('out-date').value;
+
                 
                 let errorFound = false;
 
