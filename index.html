@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web to Warehouse | Ultimate Fix</title>
+    <title>Web to Warehouse | Ultimate Full Stack</title>
     <style>
         /* --- VARIABLES --- */
         :root {
@@ -186,7 +186,10 @@
                 <div class="tab" data-t="suppliers">Supplier</div>
                 <div class="tab" data-t="admin">Master Data</div>
             </div>
-            <div style="font-size:0.85rem; color:var(--text-muted); font-weight:500;" id="u-display">User</div>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div style="font-size:0.85rem; color:var(--text-muted); font-weight:500;" id="u-display">User</div>
+                <button class="btn-ghost btn-sm" onclick="App.resetSystem()" style="border-color:var(--danger); color:var(--danger);">RESET SYSTEM</button>
+            </div>
         </nav>
 
         <main>
@@ -790,8 +793,8 @@
                 
                 const ref = type==='IN' ? document.getElementById('in-ref').value : document.getElementById('out-dest').value;
                 const d = type === 'IN'
-    ? document.getElementById('in-date').value
-    : document.getElementById('out-date').value;
+                  ? document.getElementById('in-date').value
+                  : document.getElementById('out-date').value;
 
                 
                 let errorFound = false;
@@ -841,6 +844,19 @@
                 
                 document.getElementById('in-ref').value=''; 
                 document.getElementById('out-dest').value='';
+
+                // --- FIX UTAMA: UPDATE TAMPILAN STOK DI FORM ---
+                // Ambil item terakhir yang barusan disimpan (atau yang masih dipilih) untuk update info
+                if(activeCart.length > 0) {
+                    const lastItemCode = activeCart[activeCart.length-1].code;
+                    const lastItem = this.data.items.find(i => i.c === lastItemCode);
+                    if(lastItem) {
+                        // Update teks stok agar berubah sesuai stok baru
+                        this.updateStockInfo(type+'-info', lastItem, type);
+                    }
+                } else {
+                    document.getElementById(type+'-info').innerText = '-';
+                }
             },
 
             renderUnitList(item) {
@@ -963,6 +979,13 @@
                 });
                 
                 this.save(); this.renderOpname(); this.renderDash(); this.toast('Stok Diadjust');
+            },
+            
+            resetSystem() {
+                if(confirm("SYSTEM RESET:\nIni akan menghapus SEMUA data barang, supplier, dan transaksi.\nLanjutkan?")) {
+                    localStorage.removeItem('w2w_ultimate');
+                    location.reload();
+                }
             }
         };
 
