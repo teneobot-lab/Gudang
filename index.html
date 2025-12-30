@@ -788,16 +788,100 @@
             },
 
             saveTx(type) {
-                const activeCart = type === 'IN' ? this.cartIn : this.cartOut;
-                if(activeCart.length===0) return this.toast('Keranjang kosong', 'warning');
-                
-                const ref = type==='IN' ? document.getElementById('in-ref').value : document.getElementById('out-dest').value;
-                const d = type === 'IN'
-                  ? document.getElementById('in-date').value
-                  : document.getElementById('out-date').value;
+    const isIn = type === 'IN';
+    const activeCart = isIn ? this.cartIn : this.cartOut;
 
-                
-                let errorFound = false;
+    // --- GUARD ---
+    if (!this.user) {
+        this.toast('User tidak valid', 'error');
+        return;
+    }
+
+    if (activeCart.length === 0) {
+        this.toast('Keranjang kosong', 'warning');
+        return;
+    }
+
+    // --- FORM DATA ---
+    const date = isIn
+        ? document.getElementById('in-date').value
+        : document.getElementById('out-date').value;
+
+    const ref = isIn
+        ? document.getElementById('in-ref').value
+        : document.getElementById('out-dest').value;
+
+    if (!date) {
+        this.toast('Tanggal belum diisi', 'error');
+        return;
+    }
+
+    let error = false;
+
+    // --- PROCESS TRANSACTION ---
+    activeCart.forEach(c => {
+        const item = this.data.items.find(i => i.c === c.code);
+
+        if (!item) {
+            console.error('Item master tidak ditemukan', c);
+            error = true;
+            return;
+        }
+
+        const baseQty = Number(c.bq);
+        if (isNaN(baseQty)) {
+            this.toast(`Qty tidak valid: ${c.n}`, 'error');
+            error = true;
+            return;
+        }
+
+        // UPDATE STOCK
+        item.s = Number(item.s) || 0;
+        item.s = isIn ? item.s + baseQty : item.s - baseQty;
+
+        // LOG TRANSACTION
+        this.data.tx.unshift({
+            id: Date.now() + Math.random(),
+            d: date,
+            t: type,
+            r: ref || '-',
+            i: c.n,
+            q: c.q,
+            u: c.u,
+            user: this.user.u
+        });
+    });
+
+    if (error) return;
+
+    // --- SAVE DATA ---
+    this.save();
+
+    // --- CLEAR CART ---
+    if (isIn) this.cartIn = [];
+    else this.cartOut = [];
+
+    this.renderCart(isIn ? 'in' : 'out');
+    this.renderDash();
+    this.renderItems();
+
+    // --- RESET FORM ---
+    if (isIn) {
+        document.getElementById('in-ref').value = '';
+    } else {
+        document.getElementById('out-dest').value = '';
+    }
+
+    const infoId = isIn ? 'in-info' : 'out-info';
+    const infoEl = document.getElementById(infoId);
+    infoEl.innerText = isIn ? 'Stok saat ini: -' : 'Tersedia: -';
+    infoEl.className = 'st-info';
+
+    // --- TOAST (LAST, SAFE) ---
+    setTimeout(() => {
+        this.toast('Transaksi Berhasil Disimpan');
+    }, 50);
+}
 
                 // LOOP AND UPDATE STOCK
                 activeCart.forEach(c => {
